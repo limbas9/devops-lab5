@@ -12,6 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Clear Docker cache
+        run: echo "Clearing Docker build cache" && docker builder prune -f
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
