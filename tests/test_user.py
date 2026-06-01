@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from fastapi import status
 
 from src.main import app
 
@@ -13,7 +14,7 @@ users = [
     },
     {
         'id': 2,
-        'name': 'Petr Petrov',
+        'name': 'Pyotr Pyotrov',
         'email': 'p.p.petrov@mail.com',
     }
 ]
@@ -21,21 +22,34 @@ users = [
 def test_get_existed_user():
     '''Получение существующего пользователя'''
     response = client.get("/api/v1/user", params={'email': users[0]['email']})
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json() == users[0]
 
 def test_get_unexisted_user():
     '''Получение несуществующего пользователя'''
-    pass
+    response = client.get("/api/v1/user", params={'email': 'no.such.user@mail.com'})
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"detail": "User not found"}
 
 def test_create_user_with_valid_email():
     '''Создание пользователя с уникальной почтой'''
-    pass
+    new_user_data = {
+        "name": "New User",
+        "email": "new.user@mail.com"
+    }
+    response = client.post("/api/v1/user", json=new_user_data)
+    
+    assert response.status_code == status.HTTP_201_CREATED
+    user_id = response.json()
+    assert isinstance(user_id, int)
 
 def test_create_user_with_invalid_email():
-    '''Создание пользователя с почтой, которую использует другой пользователь'''
-    pass
-
-def test_delete_user():
-    '''Удаление пользователя'''
-    pass
+    '''Создание пользователя с уже существующей почтой'''
+    duplicate_user_data = {
+        "name": "Duplicate User",
+        "email": users[1]['email']
+    }
+    response = client.post("/api/v1/user", json=duplicate_user_data)
+    
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {"detail": "User with this email already exists"}
